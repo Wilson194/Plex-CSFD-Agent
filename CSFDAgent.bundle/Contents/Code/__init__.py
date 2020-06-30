@@ -17,16 +17,16 @@ class CSFDAgent(Agent.Movies):
 
 
     def search(self, results, media, lang, manual=False):
-        Log('-' * 157)
-        Log('Start searching with CSFD Agent')
-        Log('-' * 157)
+        Log.Info('-' * 157)
+        Log.Info('Start searching with CSFD Agent')
+        Log.Info('-' * 157)
 
         return
 
 
     def update(self, metadata, media, lang):
-        Log('-' * 157)
-        Log('Start updating with CSFD Agent')
-        Log('-' * 157)
+        Log.Info('-' * 157)
+        Log.Info('Start updating with CSFD Agent')
+        Log.Info('-' * 157)
 
         return
