@@ -1,10 +1,15 @@
-import re
+import CSFDScraper
+from AgentMethods import *
+
+# End run environment
+
+CSFD_DETAIL_URL = "http://www.csfd.cz/film/{}"
+CSFD_SEARCH_URL = "http://www.csfd.cz/hledat/?q={}"
+CSDF_PERSON_URL = "https://www.csfd.cz/tvurce/{}"
 
 
 def Start():
     HTTP.CacheTime = CACHE_1DAY
-    HTTP.Headers[
-        'User-Agent'] = 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.2; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0)'
 
 
 class CSFDAgent(Agent.Movies):
@@ -21,6 +26,22 @@ class CSFDAgent(Agent.Movies):
         Log.Info('Start searching with CSFD Agent')
         Log.Info('-' * 157)
 
+        name = resolve_film_name(media.filename, media.name)
+
+        Log.Info('Resolving file with Name: {}, Year: {}, Duration{}'.format(name, media.year, media.duration))
+
+        search_results = find_movie(name, media.year, media.duration, manual)
+
+        for metadata, score in search_results:
+            name = metadata.name['CZ']
+            # TODO: Add other names
+
+            results.Append(MetadataSearchResult(id=metadata,
+                                                name=name,
+                                                year=metadata.year,
+                                                score=score,
+                                                lang=Locale.Language.Czech))
+
         return
 
 
@@ -28,5 +49,59 @@ class CSFDAgent(Agent.Movies):
         Log.Info('-' * 157)
         Log.Info('Start updating with CSFD Agent')
         Log.Info('-' * 157)
+
+        Log.Debug('Primary name: {}'.format(metadata.primary_name))
+        if metadata.primary_name:
+            metadata.title = metadata.primary_name
+
+        Log.Debug('Year: {}'.format(metadata.year))
+        if metadata.year:
+            metadata.year = metadata.year
+
+        Log.Debug('rating: {}'.format(metadata.rating))
+        if metadata.rating:
+            metadata.rating = metadata.rating
+
+        Log.Debug('summary: {}'.format(metadata.summary))
+        if metadata.summary:
+            metadata.summary = metadata.summary
+
+        Log.Debug('genres: {}'.format(metadata.genres))
+        if metadata.genres:
+            metadata.genres.clear()
+            for genre in metadata.genres:
+                metadata.genres.add(genre)
+
+        Log.Debug('duration: {}'.format(metadata.duration))
+        if csfd_metadata.duration:
+            metadata.duration = metadata.duration
+
+        Log.Debug('Tags: {}'.format(metadata.tags))
+        if metadata.tags:
+            metadata.tags.clear()
+            for tag in metadata.tags:
+                metadata.tags.add(tag)
+
+        # Actors
+        Log.Debug('actors: {}'.format(metadata.actors))
+        if metadata.actors:
+            metadata.roles.clear()
+            for actor in metadata.actors:
+                role = metadata.roles.new()
+                person_metadata = self.csfd_person_metadata(actor.id)
+                role.name = person_metadata.name
+                role.photo = person_metadata.image
+
+        Log.Debug('directors: {}'.format(metadata.directors))
+        if metadata.directors:
+            metadata.directors.clear()
+            for director in metadata.directors:
+                metadata.directors.add(director)
+
+        Log.Debug('Posters: {}'.format(metadata.posters))
+        if metadata.posters:
+            for i, poster_url in enumerate(metadata.posters):
+                poster = HTTP.Request(poster_url + '?h180')
+                # metadata.posters[poster_url] = Proxy.Preview(poster, sort_order=i + 1)
 
         return
